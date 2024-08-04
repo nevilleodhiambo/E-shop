@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
@@ -14,7 +16,9 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::all();
-        return Inertia::render('admin/Product/Index', compact('products'));
+        $categories = Category::all();
+        $brands = Brand::all();
+        return Inertia::render('admin/Product/Index', compact('products', 'categories', 'brands'));
     }
     public function create()
     {
@@ -53,6 +57,6 @@ class ProductController extends Controller
                 ]);
             }
         }
-        return redirect()->route('admin.product.index')->with('success', 'Product created successfully');
+        return redirect()->route('admin.products.index')->with('success', 'Product created successfully');
     }
 }
