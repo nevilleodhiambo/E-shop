@@ -1,6 +1,12 @@
 <script setup>
 import { Link, router, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
+import Index from "./Index.vue";
+import { Plus } from "@element-plus/icons-vue";
+
+defineProps({
+  products: Array,
+});
 
 const products = usePage().props.products;
 const categories = usePage().props.categories;
@@ -10,6 +16,26 @@ console.log(products);
 const isAddProduct = ref(false);
 const editMode = ref(false);
 const dialogVisible = ref(false);
+
+//upload multiple images
+
+// const fileList = ref([]);
+
+const productImages = ref([]);
+const dialogImageUrl = ref("");
+
+const handleFileChange = (file) => {
+  productImages.value.push(file);
+};
+
+const handlePictureCardPreview = (file) => {
+  dialogImageUrl.value = file.url;
+  dialogVisible.value = true;
+};
+
+const handleRemove = (file) => {
+  console.log(file);
+};
 
 //product from data
 
@@ -25,8 +51,6 @@ const published = ref("");
 const category_id = ref("");
 const brand_id = ref("");
 const inStock = ref("");
-
-const productImages = ref([]);
 
 //open add modal
 const openAddModal = () => {
@@ -48,22 +72,22 @@ const addProduct = async () => {
 
   //append product Images to the formData
 
-  for (const image of product_images.value) {
+  for (const image of productImages.value) {
     formData.append("product_images[]", image.raw);
   }
   try {
     await router.post("product/store", formData, {
-      onSuccess: page => {
+      onSuccess: (page) => {
         Swal.fire({
           toast: true,
           icon: "success",
           // title: 'Product Added',
-          position: 'top-end',
+          position: "top-end",
           showConfirmButton: false,
-          title: page.props.flash.success
+          title: page.props.flash.success,
           // timer: 1500
-        })
-        dialogVisible.value = false
+        });
+        dialogVisible.value = false;
         resetFormData();
       },
     });
@@ -72,21 +96,130 @@ const addProduct = async () => {
   }
 };
 
-const resetFormData = () =>{
-  id.value = '';
-  title.value = '';
-  price.value = '';
-  quantity.value = '';
-  description.value = '';
+const resetFormData = () => {
+  id.value = "";
+  title.value = "";
+  price.value = "";
+  quantity.value = "";
+  description.value = "";
   productImages.value = [];
-  // dialogImageUrl.value = '';
-}
+  dialogImageUrl.value = "";
+};
 
-const openEditModal = (product) => {
+const openEditModal = (product, index) => {
+  console.log(product, index);
+
+  id.value = product.id;
+  title.value = product.title;
+  price.value = product.price;
+  quantity.value = product.quantity;
+  description.value = product.description;
+  brand_id.value = product.brand_id;
+  category_id.value = product.category_id;
+  product_images.value = product.product_images;
+
   editMode.value = true;
   isAddProduct.value = false;
   dialogVisible.value = true;
 };
+
+//delete image from server
+
+const deleteImage = async (pimage, index) => {
+  try {
+    await router.delete("/admin/products/image/" + pimage.id, {
+      onSuccess: (page) => {
+        product_images.value.splice(index, 1);
+        Swal.fire({
+          toast: true,
+          icon: "success",
+          // title: 'Product Added',
+          position: "top-end",
+          showConfirmButton: false,
+          title: page.props.flash.success,
+          // timer: 1500
+        });
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+//update product
+
+const updateProduct = async () => {
+  const formData = new FormData();
+  formData.append("title", title.value);
+  formData.append("price", price.value);
+  formData.append("quantity", quantity.value);
+  formData.append("description", description.value);
+  formData.append("brand_id", brand_id.value);
+  formData.append("category_id", category_id.value);
+  formData.append("_method", "PUT");
+
+  for (const image of productImages.value) {
+    formData.append("product_images[]", image.raw);
+  }
+  try {
+    await router.post("products/update/" + id.value, formData, {
+      onSuccess: (page) => {
+        dialogVisible.value = false;
+        resetFormData();
+        Swal.fire({
+          toast: true,
+          icon: "success",
+          // title: 'Product Added',
+          position: "top-end",
+          showConfirmButton: false,
+          title: page.props.flash.success,
+          // timer: 1500
+        });
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//delete product
+const deleteProduct = (product, index) => {
+  Swal.fire({
+    title: "Are you sure",
+    text: "This Action cannot be undone",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    cancelButtonText: "no",
+    confirmButtonText: "yes, delete",
+    // title: 'Product Added',
+    // position: "top-end",
+    // showConfirmButton: false,
+    // title: page.props.flash.success,
+    // timer: 1500
+  }).then((result) => {
+    if (result.isConfirmed) {
+        try {
+          router.delete("products/destroy/" + product.id, {
+            onSuccess: (page) => {
+              this.delete(product, index);
+              Swal.fire({
+                toast: true,
+                icon: "success",
+                position: "top-end",
+                showConfirmButton: false,
+                title: page.props.flash.success,
+              });
+            }
+          });
+        } catch (error) {
+        console.log(error);
+      }
+    }
+  });
+};
+
+//update data
 </script>
 
 <template>
@@ -102,7 +235,11 @@ const openEditModal = (product) => {
 
       <!-- form Start -->
 
-      <form class="max-w-md mx-auto" @submit.prevent="addProduct()">
+      <form
+        class="max-w-md mx-auto"
+        @submit.prevent="editMode ? updateProduct() : addProduct()"
+        enctype="multipart/form-data"
+      >
         <div class="relative z-0 w-full mb-5 group">
           <input
             v-model="title"
@@ -159,11 +296,17 @@ const openEditModal = (product) => {
             >Select Category</label
           >
           <select
-            id="countries" v-model="category_id"
+            id="countries"
+            v-model="category_id"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option v-for="category in categories" :key="category.id" :value="category.id"> {{ category.name }}</option>
-           
+            <option
+              v-for="category in categories"
+              :key="category.id"
+              :value="category.id"
+            >
+              {{ category.name }}
+            </option>
           </select>
         </div>
 
@@ -174,11 +317,13 @@ const openEditModal = (product) => {
             >Select Brand</label
           >
           <select
-            id="countries" v-model="brand_id"
+            id="countries"
+            v-model="brand_id"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
-            <option v-for="brand in brands" :key="brand.id" :value="brand.id"> {{ brand.name }}</option>
-           
+            <option v-for="brand in brands" :key="brand.id" :value="brand.id">
+              {{ brand.name }}
+            </option>
           </select>
         </div>
 
@@ -201,8 +346,49 @@ const openEditModal = (product) => {
           </div>
         </div>
 
+        <!-- multiple image upload -->
+
+        <div class="grid md:gap-6">
+          <div class="relative z-0 w-full mb-5 group">
+            <el-upload
+              v-model:file-list="productImages"
+              list-type="picture-card"
+              multiple
+              :on-preview="handlePictureCardPreview"
+              :on-remove="handleRemove"
+              :on-change="handleFileChange"
+            >
+              <el-icon><Plus /></el-icon>
+            </el-upload>
+          </div>
+        </div>
+
+        <!-- end  -->
+
+        <!-- list of all images -->
+        <div class="flex flex-nowrap mb-8">
+          <div
+            v-for="(pimage, index) in product_images"
+            :key="pimage.id"
+            class="relative w-32 h-32"
+          >
+            <img class="w-24 h-20 rounded" :src="`/${pimage.image}`" alt="" />
+            <span
+              class="absolute top-0 left-8 transform -translate-y-1/2 w-3.5 h-3.5 bg-red-400 border-2 border-white dark:border-gray-800 rounded-full"
+            >
+              <span
+                @click="deleteImage(pimage, index)"
+                class="text-white text-xs font-bold absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                >x
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- end -->
+
         <button
-          type="submit" 
+          type="submit"
           class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
         >
           Submit
@@ -210,7 +396,6 @@ const openEditModal = (product) => {
       </form>
 
       <!-- form End -->
-
     </el-dialog>
 
     <!-- end -->
@@ -473,16 +658,45 @@ const openEditModal = (product) => {
                 >
                   {{ product.title }}
                 </th>
-                <td class="px-4 py-3">{{ product.category_id }}</td>
-                <td class="px-4 py-3">{{ product.brand_id }}</td>
+                <td class="px-4 py-3">{{ product.category.name }}</td>
+                <td class="px-4 py-3">{{ product.brand.name }}</td>
                 <td class="px-4 py-3">{{ product.quantity }}</td>
-                <td class="px-4 py-3">{{ product.inStock }}</td>
-                <td class="px-4 py-3">{{ product.published }}</td>
+                <td class="px-4 py-3">
+                  <span
+                    v-if="product.inStock == 0"
+                    class="bg-red-100 text-red-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300"
+                    >In Stock</span
+                  >
+
+                  <span
+                    v-else
+                    class="bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300"
+                    >Out of Stock</span
+                  >
+                </td>
+                <td class="px-4 py-3">
+                  <button
+                    v-if="product.published == 0"
+                    type="button"
+                    class="px-3 py-2 text-xs font-medium text-center text-white bg-green-700 rounded-lg hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                  >
+                    Published
+                  </button>
+                  <button
+                    v-else
+                    type="button"
+                    class="px-3 py-2 text-xs font-medium text-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
+                  >
+                    Unpublished
+                  </button>
+                </td>
                 <td class="px-4 py-3">$ {{ product.price }}</td>
                 <td class="px-4 py-3 flex items-center justify-end">
+                  <!-- <a href="#" @click="openEditModal(product)" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a> -->
+
                   <button
-                    id="apple-imac-27-dropdown-button"
-                    data-dropdown-toggle="apple-imac-27-dropdown"
+                    :id="`${product.id}-button`"
+                    :data-dropdown-toggle="`${product.id}`"
                     class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                     type="button"
                   >
@@ -499,12 +713,12 @@ const openEditModal = (product) => {
                     </svg>
                   </button>
                   <div
-                    id="apple-imac-27-dropdown"
+                    :id="`${product.id}`"
                     class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600"
                   >
                     <ul
                       class="py-1 text-sm text-gray-700 dark:text-gray-200"
-                      aria-labelledby="apple-imac-27-dropdown-button"
+                      :aria-labelledby="`${product.id}-button`"
                     >
                       <li>
                         <a
@@ -525,6 +739,7 @@ const openEditModal = (product) => {
                     <div class="py-1">
                       <a
                         href="#"
+                        @click="deleteProduct(product, index)"
                         class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
                         >Delete</a
                       >

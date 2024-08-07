@@ -33,11 +33,14 @@ Route::group(['prefix' =>'admin', 'middleware' => 'redirectAdmin'], function () 
     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.login.post');
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+    Route::delete('/products/image/{id}', [ProductController::class, 'deleteImage'])->name('admin.product.image.delete');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function (){
     Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/products', [ProductController::class, 'index'])->name('admin.products.index');
     Route::post('product/store', [ProductController::class, 'store'])->name('admin.product.store');
+    Route::put('products/update/{id}', [ProductController::class, 'update'])->name('admin.product.update');
+    Route::delete('products/destroy/{id}', [ProductController::class, 'destroy'])->name('admin.product.delete');
 });
 require __DIR__.'/auth.php';
