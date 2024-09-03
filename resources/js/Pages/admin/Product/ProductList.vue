@@ -8,10 +8,10 @@ defineProps({
   products: Array,
 });
 
-const products = usePage().props.products;
+// const products = usePage().props.products;
 const categories = usePage().props.categories;
 const brands = usePage().props.brands;
-console.log(products);
+// console.log(products);
 
 const isAddProduct = ref(false);
 const editMode = ref(false);
