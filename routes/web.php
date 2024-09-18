@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,15 @@ Route::get('/', [UserController::class, 'index']);
 // Route::get('/', function(){
 //     return Inertia::render('Pages/Auth/login');
 // });
+
+//user add to cart
+
+Route::prefix('cart')->controller(CartController::class)->group(function(){
+    route::get('view', 'view')->name('cart.view');
+    route::post('store /{product}', 'store')->name('cart.store');
+    route::patch('update /{product}', 'update')->name('cart.update');
+    route::delete('delete /{product}', 'destroy')->name('cart.delete');
+});
 
 Route::get('/dashboard', function () {
 return Inertia::render('Dashboard');
