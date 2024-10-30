@@ -690,7 +690,7 @@ const deleteProduct = (product, index) => {
                     Unpublished
                   </button>
                 </td>
-                <td class="px-4 py-3">$ {{ product.price }}</td>
+                <td class="px-4 py-3">Kshs {{ product.price }}</td>
                 <td class="px-4 py-3 flex items-center justify-end">
                   <!-- <a href="#" @click="openEditModal(product)" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a> -->
 

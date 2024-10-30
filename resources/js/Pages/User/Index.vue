@@ -56,6 +56,8 @@ defineProps({
   products: Array,
 });
 
+
+
 const addToCart = (product) => {
   console.log(product);
   router.post(route('cart.store', product), {
@@ -72,6 +74,8 @@ const addToCart = (product) => {
     },
   })
 }
+
+
 </script>
 
 <template>
@@ -154,7 +158,7 @@ const addToCart = (product) => {
               <p class="mt-1 text-sm text-gray-500">{{ product.brand.name }}</p>
             </div>
             <p class="text-sm font-medium text-gray-900">
-              $ {{ product.price }}
+              Kshs {{ product.price }}
             </p>
           </div>
         </div>

@@ -15,6 +15,7 @@ class Cart
             return CartItem::whereUserId($user->id)->sum('quantity');
         }
     }
+
     public static function getCartItems()
     {
         if ($user = auth()->user()) {
@@ -25,10 +26,15 @@ class Cart
     {
         return json_decode(request()->cookie('cart_items', '[]'), true);
     }
-    public static function setCookieCartItems()
-    {
-        Cookie::queue('cart_items', fn(int $carry, array $item) => $carry + $item['quantity'], 0);
-    }
+    // public static function setCookieCartItems()
+    // {
+    //     Cookie::queue('cart_items', fn(int $carry, array $item) => $carry + $item['quantity'], 0);
+    // }
+    public static function setCookieCartItems($cartItems)
+{
+    Cookie::queue('cart_items', json_encode($cartItems), 0);
+}
+
     public static function saveCookieCartItens()
     {
         $user = auth()->user();

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -14,6 +15,8 @@ class CartController extends Controller
         
     }
     public function store(Request $request, $product){
+        
+        Log::info('Cart count: ' . Cart::getCount());
         $product = Product::where('id', $product)->first();
         $quantity = $request->post('quantity', 1);
         $user = $request->user();
